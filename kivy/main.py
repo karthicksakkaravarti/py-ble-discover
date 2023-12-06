@@ -10,13 +10,14 @@ from kivy.core.window import Window  # Import Window
 from kivy.logger import Logger
 from kivy.uix.spinner import Spinner
 from kivy.uix.progressbar import ProgressBar
+from kivy.uix.textinput import TextInput
 import logging
 from kivy.animation import Animation
 
 # Set the logger for Kivy
 logging.Logger.manager.root = Logger
 
-Window.size = (700, 650)  # Example size, adjust as needed
+Window.size = (700, 670)
 
 class IndeterminateProgressBar(ProgressBar):
     def __init__(self, **kwargs):
@@ -53,6 +54,7 @@ class BluetoothScannerApp(App):
         super().__init__(**kwargs)
         self.running = True
         self.scanned_devices = []
+        self.all_discovered_devices = []  # List to store all discovered devices
         self.device_layout = BoxLayout(
             orientation='vertical', spacing=10, size_hint_y=None)
         self.device_layout.bind(
@@ -93,11 +95,20 @@ class BluetoothScannerApp(App):
         control_layout.add_widget(self.sort_spinner)
 
         main_layout.add_widget(control_layout)
-
+        
         # ProgressBar for scanning indication
         # Add IndeterminateProgressBar
         self.progress_bar = IndeterminateProgressBar(size_hint_y=None, height=20)
         main_layout.add_widget(self.progress_bar)
+
+        # Search Input
+        self.search_input = TextInput(
+            size_hint_y=None,
+            height=44,
+            hint_text='Search for devices'
+        )
+        self.search_input.bind(text=self.on_search_text)
+        main_layout.add_widget(self.search_input)
 
         
         scroll_view = ScrollView(size_hint=(
@@ -106,6 +117,17 @@ class BluetoothScannerApp(App):
         main_layout.add_widget(scroll_view)
 
         return main_layout
+
+    def on_search_text(self, instance, value):
+        """Filter the list of devices based on the search query."""
+        if not value:
+            # If the search query is empty, show all devices
+            filtered_devices = self.scanned_devices
+        else:
+            # Filter devices based on the query (name or address)
+            filtered_devices = [d for d in self.scanned_devices if value.lower() in d.name.lower() or value.lower() in d.address.lower()]
+
+        self.update_device_list(filtered_devices)
 
     def on_filter_select(self, spinner, text):
         if text == 'Paired Devices':
@@ -143,7 +165,10 @@ class BluetoothScannerApp(App):
                 Logger.info("BluetoothScanner: Scanning for devices...")
                 scanned_devices = await bleak.BleakScanner.discover(1)
                 Logger.info("BluetoothScanner: Scan complete")
-                self.update_device_list(scanned_devices)
+                for device in scanned_devices:
+                    if device not in self.all_discovered_devices:
+                        self.all_discovered_devices.append(device)
+                self.update_device_list(self.all_discovered_devices)
                 await asyncio.sleep(5)  # Add delay for periodic scanning
             except bleak.exc.BleakError as e:
                 Logger.error(f"BluetoothScanner: Error - {e}")
