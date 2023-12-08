@@ -133,9 +133,7 @@ class BluetoothScannerApp(App):
             filtered_devices = self.scanned_devices
         else:
             # Filter devices based on the query (name or address)
-            filtered_devices = [d for d in self.scanned_devices if value.lower(
-            ) in d.name.lower() or value.lower() in d.address.lower()]
-
+            filtered_devices = [d for d in self.all_discovered_devices if d.name and value.lower() in d.name.lower() or value.lower() in d.address.lower()]
         self.update_device_list(filtered_devices)
 
     def on_filter_select(self, spinner, text):
