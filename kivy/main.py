@@ -19,6 +19,7 @@ logging.Logger.manager.root = Logger
 
 Window.size = (700, 670)
 
+
 class IndeterminateProgressBar(ProgressBar):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,9 +28,11 @@ class IndeterminateProgressBar(ProgressBar):
         self.start_animation()
 
     def start_animation(self):
-        anim = Animation(value=self.max, duration=1) + Animation(value=0, duration=1)
+        anim = Animation(value=self.max, duration=1) + \
+            Animation(value=0, duration=1)
         anim.repeat = True
         anim.start(self)
+
 
 class BluetoothDeviceItem(BoxLayout):
     """Custom layout for each Bluetooth device in the list."""
@@ -95,10 +98,11 @@ class BluetoothScannerApp(App):
         control_layout.add_widget(self.sort_spinner)
 
         main_layout.add_widget(control_layout)
-        
+
         # ProgressBar for scanning indication
         # Add IndeterminateProgressBar
-        self.progress_bar = IndeterminateProgressBar(size_hint_y=None, height=20)
+        self.progress_bar = IndeterminateProgressBar(
+            size_hint_y=None, height=20)
         main_layout.add_widget(self.progress_bar)
 
         # Search Input
@@ -110,7 +114,6 @@ class BluetoothScannerApp(App):
         self.search_input.bind(text=self.on_search_text)
         main_layout.add_widget(self.search_input)
 
-        
         scroll_view = ScrollView(size_hint=(
             1, None), size=(Window.width, Window.height))
         scroll_view.add_widget(self.device_layout)
@@ -125,7 +128,8 @@ class BluetoothScannerApp(App):
             filtered_devices = self.scanned_devices
         else:
             # Filter devices based on the query (name or address)
-            filtered_devices = [d for d in self.scanned_devices if value.lower() in d.name.lower() or value.lower() in d.address.lower()]
+            filtered_devices = [d for d in self.scanned_devices if value.lower(
+            ) in d.name.lower() or value.lower() in d.address.lower()]
 
         self.update_device_list(filtered_devices)
 
