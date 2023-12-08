@@ -1,18 +1,21 @@
-from kivy.core.window import Window
 import asyncio
-import bleak
+import logging
+# Kivy
 from kivy.app import App
+from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
-from kivy.core.window import Window  # Import Window
+from kivy.core.window import Window 
 from kivy.logger import Logger
 from kivy.uix.spinner import Spinner
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
-import logging
 from kivy.animation import Animation
+from kivy.metrics import dp
+# Bleak
+import bleak
 
 # Set the logger for Kivy
 logging.Logger.manager.root = Logger
@@ -39,7 +42,9 @@ class BluetoothDeviceItem(BoxLayout):
 
     def __init__(self, device, connect_callback, **kwargs):
         super().__init__(orientation='horizontal', **kwargs)
+        self.size_hint_y = None  # Allow height to be set manually
         self.device = device
+        self.height = dp(50)  # Example: Set height to 50dp
         device_info = f"{device.name} ({device.address})"
         if hasattr(device, 'rssi'):  # Check if RSSI information is available
             device_info += f" - Signal: {device.rssi}dBm"
