@@ -7,7 +7,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
-from kivy.core.window import Window 
+from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.spinner import Spinner
 from kivy.uix.progressbar import ProgressBar
@@ -20,7 +20,7 @@ import bleak
 # Set the logger for Kivy
 logging.Logger.manager.root = Logger
 
-Window.size = (700, 670)
+Window.size = (700, 690)
 
 
 class IndeterminateProgressBar(ProgressBar):
@@ -63,11 +63,21 @@ class BluetoothScannerApp(App):
         self.running = True
         self.scanned_devices = []
         self.all_discovered_devices = []  # List to store all discovered devices
+        self.is_scanning = False  # New attribute to control scanning
         self.device_layout = BoxLayout(
             orientation='vertical', spacing=10, size_hint_y=None)
         self.device_layout.bind(
             minimum_height=self.device_layout.setter('height'))
 
+    def toggle_scanning(self, instance):
+        """Toggle the scanning process."""
+        self.is_scanning = not self.is_scanning
+        self.scan_button.text = "Stop Scanning" if self.is_scanning else "Start Scanning"
+        if self.is_scanning:
+            asyncio.create_task(self.scan_and_display_devices())
+        else:
+            self.hide_progress_bar() 
+            
     def show_progress_bar(self):
         self.progress_bar.opacity = 1
         self.progress_bar.disabled = False
@@ -104,6 +114,11 @@ class BluetoothScannerApp(App):
 
         main_layout.add_widget(control_layout)
 
+        # Add a button to toggle scanning
+        self.scan_button = Button(text="Start Scanning", size_hint_y=None, height=44)
+        self.scan_button.bind(on_press=self.toggle_scanning)
+        main_layout.add_widget(self.scan_button)
+
         # ProgressBar for scanning indication
         # Add IndeterminateProgressBar
         self.progress_bar = IndeterminateProgressBar(
@@ -123,7 +138,7 @@ class BluetoothScannerApp(App):
             1, None), size=(Window.width, Window.height))
         scroll_view.add_widget(self.device_layout)
         main_layout.add_widget(scroll_view)
-
+        self.hide_progress_bar()
         return main_layout
 
     def on_search_text(self, instance, value):
@@ -133,7 +148,8 @@ class BluetoothScannerApp(App):
             filtered_devices = self.scanned_devices
         else:
             # Filter devices based on the query (name or address)
-            filtered_devices = [d for d in self.all_discovered_devices if d.name and value.lower() in d.name.lower() or value.lower() in d.address.lower()]
+            filtered_devices = [d for d in self.all_discovered_devices if d.name and value.lower(
+            ) in d.name.lower() or value.lower() in d.address.lower()]
         self.update_device_list(filtered_devices)
 
     def on_filter_select(self, spinner, text):
@@ -166,7 +182,7 @@ class BluetoothScannerApp(App):
 
     async def scan_and_display_devices(self):
         """Scan for Bluetooth devices and update the display."""
-        while self.running:
+        while self.is_scanning:
             try:
                 self.show_progress_bar()  # Show the progress bar
                 Logger.info("BluetoothScanner: Scanning for devices...")
@@ -180,7 +196,8 @@ class BluetoothScannerApp(App):
             except bleak.exc.BleakError as e:
                 Logger.error(f"BluetoothScanner: Error - {e}")
             finally:
-                self.hide_progress_bar()  # Hide the progress bars
+                if not self.is_scanning:
+                    self.hide_progress_bar() # Hide the progress bar if stopped
 
     async def connect_to_device(self, device):
         """Attempt to connect to the selected Bluetooth device."""
